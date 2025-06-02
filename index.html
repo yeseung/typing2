@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>성경 타자 연습</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background: #f7f7f7;
+        }
+        #bible_text {
+            background: #eef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            font-size: 16px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .results {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📖 성경 타자 연습</h1>
+
+    <div id="bible_text">
+        태초에 하나님이 천지를 창조하시니라. (창세기 1:1)
+    </div>
+
+    <textarea id="typing_area" placeholder="여기에 위 구절을 입력하세요..."></textarea>
+
+    <button onclick="submitScore()">제출</button>
+
+    <div class="results">
+        <div id="accuracy_display">정확도: -</div>
+        <div id="speed_display">속도: -</div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+
+        function getLevenshteinDistance(a, b) {
+            const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+            for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+            for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+            for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(
+                        dp[i - 1][j] + 1,
+                        dp[i][j - 1] + 1,
+                        dp[i - 1][j - 1] + cost
+                    );
+                }
+            }
+            return dp[a.length][b.length];
+        }
+
+        function submitScore() {
+            const typed = document.getElementById('typing_area').value.trim();
+            const original = document.getElementById('bible_text').innerText.trim();
+
+            if (!typed) {
+                alert("입력된 텍스트가 없습니다.");
+                return;
+            }
+
+            const distance = getLevenshteinDistance(typed, original);
+            const accuracy = Math.max(0, ((original.length - distance) / original.length) * 100).toFixed(2);
+
+            const timeTaken = (Date.now() - startTime) / 1000;
+            const words = typed === '' ? 0 : typed.split(/\s+/).length;
+            const speed = ((words / timeTaken) * 60).toFixed(2);
+
+            document.getElementById('accuracy_display').innerText = `정확도: ${accuracy}%`;
+            document.getElementById('speed_display').innerText = `속도: ${speed} WPM`;
+
+            fetch('bible_taja_update.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accuracy, speed })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById('typing_area').value = '';
+                window.location.reload(); // 또는 새로운 구절을 동적으로 갱신
+            })
+            .catch(err => {
+                console.error(err);
+                alert("서버 오류가 발생했습니다.");
+            });
+        }
+    </script>
+</body>
+</html>
