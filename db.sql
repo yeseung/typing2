@@ -1,0 +1,7 @@
+CREATE TABLE typing_scores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    accuracy DECIMAL(5,2) NOT NULL,
+    speed DECIMAL(5,2) NOT NULL,
+    score DECIMAL(6,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
